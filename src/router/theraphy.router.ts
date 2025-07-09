@@ -13,8 +13,10 @@ TherapyRouter.get("/therapists/:id", therapyController.getTheraphyById);
 TherapyRouter.post("/book", therapyController.bookATheraphy);
 
 // GET all sessions for a user
-TherapyRouter.get("/sessions/:userId", therapyController.getUserTherapies);
+TherapyRouter.get("/sessions", therapyController.getUserTherapies);
 
+// GET create fictional theraphist.
+TherapyRouter.get("/create-fictional-therapist", therapyController.createMockTherapists)
 // DELETE a therapy session
 TherapyRouter.delete("/sessions/:sessionId", therapyController.cancelTherapy);
 

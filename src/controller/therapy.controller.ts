@@ -54,9 +54,24 @@ class TheraphyController {
     // Book a therapy session
     async bookATheraphy(req: Request, res: Response): Promise<Response> {
         try {
-            const { therapistId, userId, date, title } = req.body;
+            const { therapistId, date, title } = req.body;
+            const authHeader = req.headers.authorization;
 
-            if (!therapistId || !userId || !date || !title) {
+            if (!authHeader || !authHeader.startsWith("Bearer ")) {
+                return res.status(401).json({ message: "Missing or invalid Authorization header" });
+            }
+
+            const token = authHeader.split(" ")[1];
+
+            let decoded: any;
+            try {
+                decoded = jwt.verify(token, JWT_SECRET);
+            } catch (err) {
+                return res.status(401).json({ message: "Invalid or expired token" });
+            }
+
+            const clientId = decoded.userId;
+            if (!therapistId || !date || !title) {
                 return res.status(400).json({ message: "Missing required fields" });
             }
 
@@ -73,7 +88,6 @@ class TheraphyController {
                 return res.status(404).json({ message: "Therapist not found" });
             }
 
-            // Reconciliation: Check if there's already a booking at this time
             const existingBooking = await prisma.therapy.findFirst({
                 where: {
                     therapistId,
@@ -88,7 +102,7 @@ class TheraphyController {
             const booking = await prisma.therapy.create({
                 data: {
                     therapistId,
-                    clientId: userId,
+                    clientId,
                     date: parsedDate,
                     title,
                 }
@@ -104,10 +118,25 @@ class TheraphyController {
     // List all therapy sessions for a user
     async getUserTherapies(req: Request, res: Response): Promise<Response> {
         try {
-            const { userId } = req.params;
+            const authHeader = req.headers.authorization;
+
+            if (!authHeader || !authHeader.startsWith('Bearer ')) {
+                return res.status(401).json({ message: 'Missing or invalid Authorization header' });
+            }
+
+            const token = authHeader.split(' ')[1];
+
+            let decoded: any;
+            try {
+                decoded = jwt.verify(token, JWT_SECRET);
+            } catch (err) {
+                return res.status(401).json({ message: 'Invalid or expired token' });
+            }
+
+            const userId = decoded.userId;
 
             const sessions = await prisma.therapy.findMany({
-                where: { clientId: Number(userId) },
+                where: { clientId: userId },
                 include: { therapist: true }
             });
 
@@ -119,20 +148,82 @@ class TheraphyController {
     }
 
     // Cancel a session
+
     async cancelTherapy(req: Request, res: Response): Promise<Response> {
         try {
             const { sessionId } = req.params;
 
-            const session = await prisma.therapy.delete({
+            const authHeader = req.headers.authorization;
+            if (!authHeader || !authHeader.startsWith('Bearer ')) {
+                return res.status(401).json({ message: 'Missing or invalid Authorization header' });
+            }
+
+            const token = authHeader.split(' ')[1];
+            let decoded: any;
+            try {
+                decoded = jwt.verify(token, JWT_SECRET);
+            } catch (err) {
+                return res.status(401).json({ message: 'Invalid or expired token' });
+            }
+
+            const userId = decoded.id;
+
+            // First fetch the session
+            const session = await prisma.therapy.findUnique({
                 where: { id: Number(sessionId) }
             });
 
-            return res.status(200).json({ message: "Session cancelled", data: session });
+            if (!session) {
+                return res.status(404).json({ message: "Session not found" });
+            }
+
+
+
+            const deleted = await prisma.therapy.delete({
+                where: { id: Number(sessionId) }
+            });
+
+            return res.status(200).json({ message: "Session cancelled", data: deleted });
         } catch (error) {
             console.error(error);
             return res.status(500).json({ message: "Failed to cancel session", error });
         }
     }
+
+    // Create 5 fictional therapists
+    async createMockTherapists(req: Request, res: Response): Promise<Response> {
+        try {
+            const mockTherapists = [
+                { name: "Dr. Lara Mind", email: "lara@calm.com" },
+                { name: "Dr. Neil Thoughtson", email: "neil@focus.io" },
+                { name: "Dr. Mira Chillwell", email: "mira@zenpath.org" },
+                { name: "Dr. Zen Moon", email: "zen@mindspace.ai" },
+                { name: "Dr. Felix Talkmore", email: "felix@healtalk.com" },
+            ];
+
+            const password = "secureTherapy123";
+            const hashedPassword = await bcrypt.hash(password, 10);
+
+            const createdTherapists = await Promise.all(
+                mockTherapists.map(t =>
+                    prisma.user.create({
+                        data: {
+                            name: t.name,
+                            email: t.email,
+                            password: hashedPassword,
+                            type: "THERAPIST",
+                        }
+                    })
+                )
+            );
+
+            return res.status(201).json({ message: "Mock therapists created", data: createdTherapists });
+        } catch (error) {
+            console.error(error);
+            return res.status(500).json({ message: "Error creating mock therapists", error });
+        }
+    }
+
 }
 
 
