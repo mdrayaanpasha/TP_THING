@@ -19,8 +19,9 @@ export class UserAuth {
             const hashedPassword = await bcrypt.hash(password, 10);
             let user;
             if (type === "THERAPIST") {
+                let p = parseInt(price)
                 user = await prisma.user.create({
-                    data: { name, email, password: hashedPassword, type, price: price }
+                    data: { name, email, password: hashedPassword, type, price: p }
                 });
             } else {
                 user = await prisma.user.create({
@@ -35,6 +36,7 @@ export class UserAuth {
             if (e.code === 'P2002') { // Prisma unique constraint error
                 return res.status(409).json({ message: "Email already in use" });
             }
+            console.log(e)
 
             return res.status(500).json({ message: "Server error", error: e.message });
         }

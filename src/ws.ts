@@ -31,6 +31,8 @@ wss.on('connection', (ws: ExtendedWebSocket) => {
             const toId = parseInt(to_id, 10);
             ws.userId = fromId;
 
+            //check if the appointment is within now to next 2 hrs.
+
             const savedMessage = await prisma.message.create({
                 data: { fromId, toId, content: input }
             });

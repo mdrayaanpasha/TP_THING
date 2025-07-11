@@ -1,4 +1,4 @@
-import { PrismaClient } from '../generated/prisma';
+import { PrismaClient } from "@prisma/client";
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { Request, Response } from 'express';
@@ -54,7 +54,7 @@ class TheraphyController {
     // Book a therapy session
     async bookATheraphy(req: Request, res: Response): Promise<Response> {
         try {
-            const { therapistId, date, title } = req.body;
+            const { therapistId, date, title, therapyType }: { therapistId: number, date: string, title: string, therapyType: 'MESSAGE' | 'VIDEO_CALL' } = req.body;
             const authHeader = req.headers.authorization;
 
             if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -103,10 +103,12 @@ class TheraphyController {
                 data: {
                     therapistId,
                     clientId,
+                    therapyType,
                     date: parsedDate,
                     title,
                 }
             });
+
 
             return res.status(201).json({ message: "Therapy session booked", data: booking });
         } catch (error) {
@@ -115,7 +117,7 @@ class TheraphyController {
         }
     }
 
-    // List all therapy sessions for a user
+    // List all therapy sessions for a user, excluding those older than 2 hours
     async getUserTherapies(req: Request, res: Response): Promise<Response> {
         try {
             const authHeader = req.headers.authorization;
@@ -135,9 +137,18 @@ class TheraphyController {
 
             const userId = decoded.userId;
 
+            const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
+
             const sessions = await prisma.therapy.findMany({
-                where: { clientId: userId },
-                include: { therapist: true }
+                where: {
+                    clientId: userId,
+                    date: {
+                        gte: twoHoursAgo,
+                    },
+                },
+                include: {
+                    therapist: true,
+                },
             });
 
             return res.status(200).json({ data: sessions });
@@ -146,6 +157,7 @@ class TheraphyController {
             return res.status(500).json({ message: "Unable to fetch user sessions", error });
         }
     }
+
 
     // Cancel a session
 

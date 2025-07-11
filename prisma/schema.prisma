@@ -34,9 +34,14 @@ model Therapy {
 
   therapistId Int
   clientId    Int
+  therapyType theraphyType
+  therapist   User         @relation("TherapistRelation", fields: [therapistId], references: [id])
+  client      User         @relation("ClientRelation", fields: [clientId], references: [id])
+}
 
-  therapist User @relation("TherapistRelation", fields: [therapistId], references: [id])
-  client    User @relation("ClientRelation", fields: [clientId], references: [id])
+enum theraphyType {
+  MESSAGE
+  VIDEO_CALL
 }
 
 model Message {
