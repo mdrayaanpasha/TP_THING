@@ -71,7 +71,7 @@ class TheraphyController {
             }
 
             const clientId = decoded.userId;
-            if (!therapistId || !date || !title) {
+            if (!therapistId || !date) {
                 return res.status(400).json({ message: "Missing required fields" });
             }
 
