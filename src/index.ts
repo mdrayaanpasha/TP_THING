@@ -6,8 +6,11 @@ import TherapyRouter from './router/theraphy.router';
 import jwt from 'jsonwebtoken';
 import TherapistRouter from './router/therepist.router';
 import messageRouter from './router/messages.router';
+import dotenv from "dotenv";
+dotenv.config()
 const app = express();
 const prisma = new PrismaClient();
+
 const PORT = process.env.PORT || 4000;
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
 
@@ -88,3 +91,5 @@ app.get('/api/therapy/video-call-room', async (req, res) => {
 app.listen(PORT, () => {
     console.log(`🚀 API server running at http://localhost:${PORT}`);
 });
+
+export default app;
