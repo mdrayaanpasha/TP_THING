@@ -6,10 +6,9 @@ import therapyController from './therapy.controller';
 import { Request, Response } from 'express';
 import dotenv from "dotenv";
 dotenv.config();
-import { PrismaClient } from '@prisma/client/edge'
-import { withAccelerate } from '@prisma/extension-accelerate'
+import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient().$extends(withAccelerate())
+const prisma = new PrismaClient()
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
 
